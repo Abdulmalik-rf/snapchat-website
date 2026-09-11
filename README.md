@@ -6,6 +6,7 @@
 - **الخطة الكاملة والمراحل:** [`docs/PLAN.md`](docs/PLAN.md)
 - **إعداد سلة والـ Webhook:** [`docs/SALLA-SETUP.md`](docs/SALLA-SETUP.md)
 - **فيديو الخلفية:** [`docs/VIDEO.md`](docs/VIDEO.md)
+- **النشر على Hostinger VPS:** [`docs/DEPLOY-HOSTINGER.md`](docs/DEPLOY-HOSTINGER.md)
 
 ## التشغيل محليًا
 
@@ -50,6 +51,15 @@ src/
     ui/                       # Button, Reveal, TiltCard, SectionHeading, ...
   content/site.ts             # كل المحتوى والإعدادات
   lib/                        # env, store, email, salla, whatsapp, validation, rate-limit
+```
+
+## النشر على Hostinger VPS (Docker)
+
+دليل كامل في [`docs/DEPLOY-HOSTINGER.md`](docs/DEPLOY-HOSTINGER.md). باختصار، على الخادم:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Abdulmalik-rf/snapchat-website/main/deploy/hostinger-vps.sh \
+  | bash -s -- --repo https://github.com/Abdulmalik-rf/snapchat-website --branch main --domain srvXXXXXX.hstgr.cloud
 ```
 
 ## النشر (Vercel)

@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /** بناء مستقل (server.js + الحد الأدنى من node_modules) للنشر عبر Docker على VPS */
+  output: "standalone",
+  poweredByHeader: false,
 };
 
 export default nextConfig;
