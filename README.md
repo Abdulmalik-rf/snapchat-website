@@ -6,7 +6,6 @@
 - **الخطة الكاملة والمراحل:** [`docs/PLAN.md`](docs/PLAN.md)
 - **إعداد سلة والـ Webhook:** [`docs/SALLA-SETUP.md`](docs/SALLA-SETUP.md)
 - **فيديو الخلفية:** [`docs/VIDEO.md`](docs/VIDEO.md)
-- **النشر على Hostinger:** [`docs/DEPLOY-HOSTINGER.md`](docs/DEPLOY-HOSTINGER.md)
 
 ## التشغيل محليًا
 
@@ -52,11 +51,6 @@ src/
   content/site.ts             # كل المحتوى والإعدادات
   lib/                        # env, store, email, salla, whatsapp, validation, rate-limit
 ```
-
-## النشر على Hostinger
-
-استضافة Node.js في hPanel: Build `npm run build`، Start `npm start`، Node 22، ومتغيرات البيئة من
-`.env.example`. الدليل الكامل (وبديل الـ VPS عبر Docker) في [`docs/DEPLOY-HOSTINGER.md`](docs/DEPLOY-HOSTINGER.md).
 
 ## النشر (Vercel)
 
