@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /** بناء مستقل (server.js + الحد الأدنى من node_modules) للنشر عبر Docker على VPS */
-  output: "standalone",
+  /**
+   * على استضافة Node.js (Hostinger / Vercel) يعمل `next start` مباشرة.
+   * عند البناء داخل Docker نضبط STANDALONE=1 للحصول على حزمة مستقلة (server.js).
+   */
+  output: process.env.STANDALONE === "1" ? "standalone" : undefined,
   poweredByHeader: false,
 };
 

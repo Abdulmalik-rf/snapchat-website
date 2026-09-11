@@ -1,76 +1,59 @@
-# النشر على Hostinger (نطاق مؤقت)
+# النشر على Hostinger
 
-الموقع يحتوي مسارات API (نموذج الطلب + Webhook سلة)، لذا يحتاج خادم Node.js يعمل باستمرار.
-على Hostinger الخيار المناسب هو **VPS** (أي خطة KVM). استضافة الويب المشتركة تشغّل PHP وملفات ثابتة
-فقط ولن تعمل معها مسارات الـ API.
+الموقع تطبيق Next.js عادي: أمر بناء `npm run build` وأمر تشغيل `npm start`، ويستمع على المنفذ
+الذي يمرّره المضيف في المتغير `PORT`. لذلك يعمل على **استضافة الويب في Hostinger التي تدعم Node.js**
+بدون VPS. (الـ VPS خيار بديل في آخر هذا الملف.)
 
-كل VPS في Hostinger يأتي بنطاق مؤقت جاهز بصيغة `srvXXXXXX.hstgr.cloud` يشير إلى عنوان الخادم،
-وهو ما سنستخدمه حتى يُربط النطاق الحقيقي لاحقًا.
+## الطريقة 1 — استضافة Node.js في hPanel (موصى بها)
 
-## ما ستحتاجه
+1. في hPanel: **Websites → Add website → Node.js** (أو "Deploy Node.js app" حسب الخطة).
+2. اختر **Import from GitHub** واربط مستودع `Abdulmalik-rf/snapchat-website` والفرع `main`
+   (أو ارفع ملف ZIP للمشروع بدون `node_modules`).
+3. الإعدادات:
 
-- VPS على Hostinger (Ubuntu 24.04 أو أي قالب فيه Docker).
-- عنوان IP وكلمة مرور root من hPanel → VPS → Overview، والنطاق المؤقت من نفس الصفحة.
-- المستودع على GitHub (أو نسخة من المشروع تنقلها إلى الخادم).
+   | الحقل | القيمة |
+   | --- | --- |
+   | Framework | Next.js |
+   | Node version | 22 (ملف `.nvmrc` موجود) |
+   | Root directory | `/` |
+   | Build command | `npm run build` |
+   | Start command | `npm start` |
 
-> **الحصول على النطاق المؤقت عبر API (اختياري):**
-> ```bash
-> curl -s -H "Authorization: Bearer $HOSTINGER_API_TOKEN" \
->   https://developers.hostinger.com/api/vps/v1/virtual-machines | jq '.[] | {id, hostname, ipv4}'
-> ```
-> لا تضع الـ Token داخل الكود أو المحادثات؛ خزّنه في متغير بيئة على جهازك فقط.
+4. **Environment variables** — انسخ ما تحتاجه من `.env.example`. الأهم:
 
-## الطريقة 1 — سكربت واحد على الخادم (موصى بها)
+   | المتغير | القيمة |
+   | --- | --- |
+   | `NEXT_PUBLIC_SITE_URL` | النطاق المؤقت الذي يعطيك إياه Hostinger، مثال `https://xxxx.hostingersite.com` |
+   | `NEXT_PUBLIC_WHATSAPP_NUMBER` | رقم واتساب بصيغة دولية بدون + |
+   | `SALLA_PRODUCT_URL_ANALYSIS` / `_PLAN` / `_EXPERT` | روابط منتجات سلة |
+   | `SALLA_WEBHOOK_SECRET` | سرّ الـ Webhook من سلة |
+   | `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL` | البريد |
+   | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | التخزين (موصى به: بدونه تُحفظ النماذج في الذاكرة وتضيع عند إعادة التشغيل) |
+
+5. اضغط **Deploy**. بعد الانتهاء افتح `https://<النطاق-المؤقت>/api/health` للتأكد من التكاملات.
+6. أضف رابط الـ Webhook في سلة: `https://<النطاق-المؤقت>/api/webhooks/salla` (انظر `docs/SALLA-SETUP.md`).
+
+ملاحظات:
+- متغيرات `NEXT_PUBLIC_*` تُدمج وقت البناء؛ عند تغييرها أعد النشر (Redeploy).
+- إن كانت الاستضافة تستخدم `npm` فستتجاهل `pnpm-lock.yaml` وتثبّت الإصدارات حسب `package.json`؛ هذا مقصود ويعمل.
+- عند ربط النطاق الحقيقي لاحقًا غيّر `NEXT_PUBLIC_SITE_URL` وأعد النشر.
+
+## الطريقة 2 — VPS عبر Docker (بديل)
+
+كل VPS في Hostinger يأتي بنطاق مؤقت `srvXXXXXX.hstgr.cloud`. على الخادم:
 
 ```bash
 ssh root@<IP_ADDRESS>
-
 curl -fsSL https://raw.githubusercontent.com/Abdulmalik-rf/snapchat-website/main/deploy/hostinger-vps.sh \
   | bash -s -- --repo https://github.com/Abdulmalik-rf/snapchat-website --branch main --domain srvXXXXXX.hstgr.cloud
 ```
 
-السكربت يقوم بـ:
-1. تثبيت Docker إن لم يكن موجودًا.
-2. سحب المستودع إلى `/opt/snapchat-website`.
-3. إنشاء `.env` من `.env.example` وضبط `NEXT_PUBLIC_SITE_URL` و`SITE_DOMAIN`.
-4. فتح المنفذين 80 و443، ثم `docker compose up -d --build` (التطبيق + Caddy بشهادة HTTPS تلقائية).
-
-بعد التشغيل الأول، عدّل `/opt/snapchat-website/.env` بمفاتيح Resend وسلة وUpstash ثم:
-
-```bash
-cd /opt/snapchat-website && docker compose up -d --build
-```
-
-## الطريقة 2 — بدون GitHub (رفع الملفات يدويًا)
-
-```bash
-# من جهازك
-rsync -az --exclude node_modules --exclude .next ./ root@<IP_ADDRESS>:/opt/snapchat-website/
-ssh root@<IP_ADDRESS> "cd /opt/snapchat-website && bash deploy/hostinger-vps.sh --local --domain srvXXXXXX.hstgr.cloud"
-```
-
-## التحقق
-
-- `https://srvXXXXXX.hstgr.cloud/api/health` يعرض حالة التكاملات.
-- أضف رابط الـ Webhook في سلة: `https://srvXXXXXX.hstgr.cloud/api/webhooks/salla` (انظر `docs/SALLA-SETUP.md`).
-
-## التحديث لاحقًا
-
-```bash
-ssh root@<IP_ADDRESS> "cd /opt/snapchat-website && git pull && docker compose up -d --build"
-```
-
-## ربط النطاق الحقيقي
-
-1. في DNS النطاق أضف سجل `A` يشير إلى IP الخادم (و`A` لـ `www` إن أردت).
-2. عدّل في `.env`: `SITE_DOMAIN=your-domain.com` و`NEXT_PUBLIC_SITE_URL=https://your-domain.com`.
-3. `docker compose up -d --build` — سيُصدر Caddy الشهادة تلقائيًا.
-
-## الملفات ذات الصلة
+السكربت يثبّت Docker، يسحب المستودع إلى `/opt/snapchat-website`، ينشئ `.env`، ويشغّل التطبيق خلف Caddy
+بشهادة HTTPS تلقائية. بدون GitHub: انسخ المشروع بـ `rsync` ثم `bash deploy/hostinger-vps.sh --local --domain ...`.
+التحديث لاحقًا: `git pull && docker compose up -d --build`.
 
 | الملف | الدور |
 | --- | --- |
-| `Dockerfile` | بناء متعدد المراحل، مخرجات Next "standalone"، يعمل كمستخدم غير root |
-| `docker-compose.yml` | خدمة التطبيق + Caddy (HTTPS تلقائي) |
-| `deploy/Caddyfile` | إعداد الـ reverse proxy والترويسات الأمنية |
+| `Dockerfile` | بناء متعدد المراحل بمخرجات "standalone" (تُفعَّل بـ `STANDALONE=1`) |
+| `docker-compose.yml` + `deploy/Caddyfile` | التطبيق + Caddy (HTTPS تلقائي) |
 | `deploy/hostinger-vps.sh` | سكربت التثبيت والتحديث |
